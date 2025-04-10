@@ -7,6 +7,13 @@ defined('DNS_CAA') or define('DNS_CAA', 8192);
 class DNSTracer
 {
     /**
+     * show Top-Level Domain
+     * 
+     * @var bool|false
+     */
+    protected $showTLD = false;
+
+    /**
      * DNS Record Types
      * 
      * @var array
@@ -51,6 +58,16 @@ class DNSTracer
     );
 
     /**
+     * @return static
+     */
+    public function showTopLevelDomain()
+    {
+        $this->showTLD = true;
+
+        return $this;
+    }
+
+    /**
      * @return array
      */
     protected function rootNameserverIps()
@@ -61,10 +78,10 @@ class DNSTracer
     }
 
     /**
-     * 模擬 dig +trace 功能
-     * @param string $domain 要解析的域名
-     * @param string $recordType 記錄類型，默認為 A
-     * @return array 解析追蹤結果
+     * @param string $domain
+     * @param string $recordType
+     * 
+     * @return Packets
      */
     public function trace($domain, $recordType = 'CNAME')
     {
@@ -72,28 +89,25 @@ class DNSTracer
 
         $traceResult = array();
 
-        // 從根域名服務器開始解析
         $currentNameservers = $this->rootNameserverIps();
 
-        for ($i = count($domainParts) - 1; $i >= 0; $i--) {
+        $showTld = $this->showTLD ? 1 : 2;
+
+        for ($i = (count($domainParts) - $showTld); $i >= 0; $i--) {
             $currentDomain = implode('.', array_slice($domainParts, $i));
 
-            // 嘗試從當前可用的域名服務器解析
             $resolveResult = $this->resolveWithNameservers(
                 $currentDomain,
                 $recordType,
                 $currentNameservers
             );
 
-            // 記錄當前級別的解析信息
             $traceResult[] = $resolveResult;
 
-            // 更新下一級的域名服務器
             if (!empty($resolveResult['nameservers'])) {
                 $currentNameservers = $resolveResult['nameservers'];
             }
 
-            // 如果已經解析到具體域名，則可以提前結束
             if ($i == 0) break;
         }
 
@@ -103,20 +117,20 @@ class DNSTracer
     }
 
     /**
-     * 使用指定的域名服務器解析域名
-     * @param string $domain 域名
-     * @param string $recordType 記錄類型
-     * @param array $nameservers 可用的域名服務器
-     * @return array 解析結果
+     * @param string $domain
+     * @param string $recordType
+     * @param array $nameservers
+     * 
+     * @throws ResolverException
+     * 
+     * @return array
      */
     private function resolveWithNameservers($domain, $recordType, $nameservers)
     {
         foreach ($nameservers as $nameserver) {
             try {
-                // 模擬 DNS 查詢
                 $records = dns_get_record($domain, $this->getDNSRecordType($recordType));
 
-                // 提取下一級授權域名服務器
                 $nsRecords = dns_get_record($domain, DNS_ANY);
 
                 $nextNameservers = array_column($nsRecords, 'target');
@@ -127,12 +141,11 @@ class DNSTracer
                     'nameservers' => $nextNameservers,
                 );
             } catch (\Exception $e) {
-                // 解析失敗，嘗試下一個域名服務器
                 continue;
             }
         }
 
-        throw new ResolverException('DNS解析失敗');
+        throw new ResolverException('DNS Resolve failed');
     }
 
     /**
