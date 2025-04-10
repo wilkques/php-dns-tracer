@@ -8,7 +8,7 @@
 
 ## How to use
 ```php
-$dig = new \Wilkques\DNS\Dig;
+$dig = new \Wilkques\DNS\DNSTracer;
 
 $resolve = $dig->trace('<host name>', '<dns type>');
 
