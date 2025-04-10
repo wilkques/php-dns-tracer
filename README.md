@@ -4,7 +4,7 @@
 [![License](https://poser.pugx.org/wilkques/dns-dig/license)](https://packagist.org/packages/wilkques/dns-dig)
 
 ## Installation
-`composer require wilkques/php-dns-dig`
+`composer require wilkques/php-dns-tracer`
 
 ## How to use
 ```php
