@@ -111,6 +111,7 @@ class DNSTracer
                 $nextNameservers = array_column($nsRecords, 'target');
 
                 return array(
+                    'domain' => $domain,
                     'records' => new Packet($records),
                     'nameservers' => $nextNameservers,
                 );
