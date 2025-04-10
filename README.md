@@ -1,7 +1,7 @@
 # DNS Tracer
 
-[![Latest Stable Version](https://poser.pugx.org/wilkques/dns-dig/v/stable)](https://packagist.org/packages/wilkques/dns-dig)
-[![License](https://poser.pugx.org/wilkques/dns-dig/license)](https://packagist.org/packages/wilkques/dns-dig)
+[![Latest Stable Version](https://poser.pugx.org/wilkques/dns-tracer/v/stable)](https://packagist.org/packages/wilkques/dns-tracer)
+[![License](https://poser.pugx.org/wilkques/dns-tracer/license)](https://packagist.org/packages/wilkques/dns-tracer)
 
 ## Description
 Use PHP to simulate the functionality of DNS tools like DIG or Nslookup
