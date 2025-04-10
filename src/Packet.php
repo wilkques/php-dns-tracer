@@ -24,7 +24,7 @@ class Packet
      */
     public function rrname()
     {
-        return Arrays::get($this->packet, 'rrname');
+        return Arrays::get($this->packet, 'host');
     }
 
     /**
@@ -32,7 +32,7 @@ class Packet
      */
     public function rrttl()
     {
-        return Arrays::get($this->packet, 'rrttl');
+        return Arrays::get($this->packet, 'ttl');
     }
 
     /**
@@ -40,7 +40,7 @@ class Packet
      */
     public function rrclass()
     {
-        return Arrays::get($this->packet, 'rrclass');
+        return Arrays::get($this->packet, 'class');
     }
 
     /**
@@ -48,7 +48,7 @@ class Packet
      */
     public function rrtype()
     {
-        return Arrays::get($this->packet, 'rrtype');
+        return Arrays::get($this->packet, 'type');
     }
 
     /**
@@ -56,7 +56,7 @@ class Packet
      */
     public function rrdata()
     {
-        return Arrays::get($this->packet, 'rrdata');
+        return Arrays::get($this->packet, 'ip', Arrays::get($this->packet, 'target'));
     }
 
     /**

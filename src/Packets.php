@@ -28,4 +28,20 @@ class Packets
     {
         return Arrays::map($this->packets, $callBack);
     }
+
+    /**
+     * @return array
+     */
+    public function records()
+    {
+        return Arrays::get($this->packets, 'records');
+    }
+
+    /**
+     * @return array
+     */
+    public function nameservers()
+    {
+        return Arrays::get($this->packets, 'nameservers');
+    }
 }

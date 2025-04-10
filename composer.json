@@ -1,16 +1,15 @@
 {
-    "name": "wilkques/dns-dig",
-    "description": "dns-dig",
+    "name": "wilkques/dns-tracer",
+    "description": "DNS Tracer",
     "type": "library",
     "license": "MIT",
     "require": {
         "php": ">=5.4",
-        "pear/net_dns2": ">=1.5.4",
         "wilkques/php-helper": "^5.13.0"
     },
     "autoload": {
         "psr-4": {
-            "Wilkques\\Dig\\": "src/"
+            "Wilkques\\DNS\\": "src/"
         }
     }
 }
