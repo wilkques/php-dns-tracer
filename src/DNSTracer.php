@@ -2,6 +2,8 @@
 
 namespace Wilkques\DNS;
 
+defined('DNS_CAA') or define('DNS_CAA', 8192);
+
 class DNSTracer
 {
     /**
@@ -10,10 +12,19 @@ class DNSTracer
      * @var array
      */
     protected $dnsRecordTypes = [
+        DNS_A       => 'A',
+        DNS_MX      => 'MX',
         DNS_CNAME   => 'CNAME',
         DNS_NS      => 'NS',
-        DNS_A       => 'A',
+        DNS_PTR     => 'PTR',
         DNS_TXT     => 'TXT',
+        DNS_HINFO   => 'HINFO',
+        DNS_CAA     => 'CAA',
+        DNS_SOA     => 'SOA',
+        DNS_AAAA    => 'AAAA',
+        DNS_A6      => 'A6',
+        DNS_SRV     => 'SRV',
+        DNS_NAPTR   => 'NAPTR',
     ];
 
     /**
@@ -55,7 +66,7 @@ class DNSTracer
      * @param string $recordType 記錄類型，默認為 A
      * @return array 解析追蹤結果
      */
-    public function trace($domain, $recordType = 'A')
+    public function trace($domain, $recordType = 'CNAME')
     {
         $domainParts = explode('.', $domain);
 
