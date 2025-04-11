@@ -11,9 +11,9 @@ Use PHP to simulate the functionality of DNS tools like DIG or Nslookup
 
 ## How to use
 ```php
-$dig = new \Wilkques\DNS\DNSTracer;
+$dnsTracer = new \Wilkques\DNS\DNSTracer;
 
-$resolve = $dig->trace('<host name>', '<dns type>');
+$resolve = $dnsTracer->trace('<host name>', '<dns type>');
 
 var_dump(
     $resolve
