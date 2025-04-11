@@ -2,6 +2,8 @@
 
 namespace Wilkques\DNS;
 
+use Wilkques\Helpers\Arrays;
+
 defined('DNS_CAA') or define('DNS_CAA', 8192);
 
 class DNSTracer
@@ -72,9 +74,9 @@ class DNSTracer
      */
     protected function rootNameserverIps()
     {
-        return array_map(function ($host) {
+        return Arrays::map($this->rootNameservers, function ($host) {
             return gethostbyname($host);
-        }, $this->rootNameservers);
+        });
     }
 
     /**
@@ -104,8 +106,10 @@ class DNSTracer
 
             $traceResult[] = $resolveResult;
 
-            if (!empty($resolveResult['nameservers'])) {
-                $currentNameservers = $resolveResult['nameservers'];
+            $resolveResultNameservers = Arrays::get($resolveResult, 'nameservers', []);
+
+            if (!empty($resolveResultNameservers)) {
+                $currentNameservers = $resolveResultNameservers;
             }
 
             if ($i == 0) break;
@@ -167,7 +171,7 @@ class DNSTracer
         if (in_array($dnsRecordType, $dnsRecordTypes)) {
             $dnsRecordTypes = array_flip($dnsRecordTypes);
 
-            return $dnsRecordTypes[$dnsRecordType];
+            return Arrays::get($dnsRecordTypes, $dnsRecordType);
         }
 
         return $default;
