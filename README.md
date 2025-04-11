@@ -20,7 +20,7 @@ var_dump(
 );
 ```
 
-## Other keys in associative arrays dependent on **dns type**
+## dns type
 
 | Type  | Extra Columns |
 |-------|---------------|
