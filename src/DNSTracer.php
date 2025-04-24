@@ -3,10 +3,9 @@
 namespace Wilkques\DNS;
 
 use Wilkques\Helpers\Arrays;
+use Wilkques\Helpers\Objects;
 
-defined('DNS_CAA') or define('DNS_CAA', 8192);
-
-class DNSTracer
+class DNSTracer extends \Net_DNS2_Resolver
 {
     /**
      * show Top-Level Domain
@@ -14,27 +13,6 @@ class DNSTracer
      * @var bool|false
      */
     protected $showTLD = false;
-
-    /**
-     * DNS Record Types
-     * 
-     * @var array
-     */
-    protected $dnsRecordTypes = [
-        DNS_A       => 'A',
-        DNS_MX      => 'MX',
-        DNS_CNAME   => 'CNAME',
-        DNS_NS      => 'NS',
-        DNS_PTR     => 'PTR',
-        DNS_TXT     => 'TXT',
-        DNS_HINFO   => 'HINFO',
-        DNS_CAA     => 'CAA',
-        DNS_SOA     => 'SOA',
-        DNS_AAAA    => 'AAAA',
-        DNS_A6      => 'A6',
-        DNS_SRV     => 'SRV',
-        DNS_NAPTR   => 'NAPTR',
-    ];
 
     /**
      * root nameserver
@@ -60,11 +38,13 @@ class DNSTracer
     );
 
     /**
+     * @param array $nameserver
+     * 
      * @return static
      */
-    public function showTopLevelDomain()
+    public function setNameserver($nameservers)
     {
-        $this->showTLD = true;
+        $this->setServers($nameservers);
 
         return $this;
     }
@@ -74,106 +54,118 @@ class DNSTracer
      */
     protected function rootNameserverIps()
     {
-        return Arrays::map($this->rootNameservers, function ($host) {
-            return gethostbyname($host);
-        });
-    }
-
-    /**
-     * @param string $domain
-     * @param string $recordType
-     * 
-     * @return Packets
-     */
-    public function trace($domain, $recordType = 'CNAME')
-    {
-        $domainParts = explode('.', $domain);
-
-        $traceResult = array();
-
-        $currentNameservers = $this->rootNameserverIps();
-
-        $showTld = $this->showTLD ? 1 : 2;
-
-        for ($i = (count($domainParts) - $showTld); $i >= 0; $i--) {
-            $currentDomain = implode('.', array_slice($domainParts, $i));
-
-            $resolveResult = $this->resolveWithNameservers(
-                $currentDomain,
-                $recordType,
-                $currentNameservers
-            );
-
-            $traceResult[] = $resolveResult;
-
-            $resolveResultNameservers = Arrays::get($resolveResult, 'nameservers', []);
-
-            if (!empty($resolveResultNameservers)) {
-                $currentNameservers = $resolveResultNameservers;
-            }
-
-            if ($i == 0) break;
-        }
-
-        return new Packets(
-            array_reverse($traceResult)
+        return array_values(
+            $this->hostToIps($this->rootNameservers)
         );
     }
 
     /**
-     * @param string $domain
-     * @param string $recordType
-     * @param array $nameservers
-     * 
-     * @throws ResolverException
+     * @param array $hosts
      * 
      * @return array
      */
-    private function resolveWithNameservers($domain, $recordType, $nameservers)
+    protected function hostToIps($hosts)
     {
-        foreach ($nameservers as $nameserver) {
-            try {
-                $records = dns_get_record($domain, $this->getDNSRecordType($recordType));
+        $ips = Arrays::map($hosts, function ($host) {
+            if (is_object($host)) {
+                $host = Objects::get($host, 'nsdname', Objects::get($host, 'mname'));
+            }
 
-                $nsRecords = dns_get_record($domain, DNS_ANY);
+            return gethostbyname($host);
+        });
 
-                $nextNameservers = array_column($nsRecords, 'target');
+        return array_values(
+            Arrays::filter($ips)
+        );
+    }
 
-                return array(
-                    'domain' => $domain,
-                    'records' => new Packet($records),
-                    'nameservers' => $nextNameservers,
+    /**
+     * @param \Net_DNS2_Packet_Response $resolver
+     * 
+     * @return array
+     */
+    public function nameservers($resolver)
+    {
+        if ($resolver->additional) {
+            $nameservers = Arrays::map($resolver->additional, function ($resolver) {
+                return $resolver->address;
+            });
+
+            return array_values(
+                Arrays::filter($nameservers)
+            );
+        }
+
+        return $this->hostToIps($resolver->authority);
+    }
+
+    /**
+     * @param string $domain
+     * @param array|[] $options
+     * 
+     * @return array
+     */
+    public function dnsTLDNameServers($domain, $class = 'IN')
+    {
+        // root
+        $resolver = $this->setNameserver(
+            $this->rootNameserverIps()
+        )->query($domain, 'NS', $class);
+
+        // gtld
+        $resolver = $this->setNameserver(
+            $this->nameservers($resolver)
+        )->query($domain, 'NS', $class);
+
+        if ($resolver->additional) {
+            return $this->nameservers($resolver);
+        }
+
+        return $this->hostToIps($resolver->authority);
+    }
+
+    /**
+     * @param string $domain
+     * @param string $type
+     * 
+     * @return Packets
+     */
+    public function trace($domain, $type = 'CNAME', $class = 'IN')
+    {
+        $domainParts = explode('.', $domain);
+
+        $this->setNameserver(
+            $this->dnsTLDNameServers($domain, $class)
+        );
+
+        for ($i = (count($domainParts) - 2); $i >= 0; $i--) {
+            // answer
+            $resolver = $this->query($domain, $type, $class);
+
+            $nameservers = $this->nameservers($resolver);
+
+            if (!empty($nameservers))
+                $this->setNameserver($nameservers);
+
+            if (!empty($resolver->answer)) {
+                return new Packets(
+                    Arrays::map($resolver->answer, function ($answer) {
+                        $answer = $answer->asArray();
+
+                        return new Packet(
+                            array(
+                                'rrname'    => $answer['name'],
+                                'rrclass'   => $answer['class'],
+                                'rrttl'     => $answer['ttl'],
+                                'rrtype'    => $answer['type'],
+                                'rrdata'    => $answer['rdata'],
+                            )
+                        );
+                    })
                 );
-            } catch (\Exception $e) {
-                continue;
             }
         }
 
         throw new ResolverException('DNS Resolve failed');
-    }
-
-    /**
-     * @param int|string $dnsRecordType
-     * @param int $default
-     * 
-     * @return int
-     */
-    public function getDnsRecordType($dnsRecordType, $default = DNS_CNAME)
-    {
-        $dnsRecordTypes = $this->dnsRecordTypes;
-
-        if (is_numeric($dnsRecordType) && array_key_exists($dnsRecordType, $dnsRecordTypes)) {
-            return $dnsRecordType;
-        }
-
-        $dnsRecordType = strtoupper($dnsRecordType);
-
-        if (in_array($dnsRecordType, $dnsRecordTypes)) {
-            $dnsRecordTypes = array_flip($dnsRecordTypes);
-
-            return Arrays::get($dnsRecordTypes, $dnsRecordType);
-        }
-
-        return $default;
     }
 }

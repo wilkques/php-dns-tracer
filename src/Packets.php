@@ -9,7 +9,7 @@ class Packets
     /**
      * @var array
      */
-    protected $packets;
+    protected $packets = array();
 
     /**
      * @var array
@@ -32,16 +32,8 @@ class Packets
     /**
      * @return array
      */
-    public function records()
+    public function rrdatas()
     {
-        return Arrays::get($this->packets, 'records');
-    }
-
-    /**
-     * @return array
-     */
-    public function nameservers()
-    {
-        return Arrays::get($this->packets, 'nameservers');
+        return Arrays::pluck($this->packets, 'rrdata');
     }
 }

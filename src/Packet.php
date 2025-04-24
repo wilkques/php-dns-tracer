@@ -9,7 +9,7 @@ class Packet
     /**
      * @var array
      */
-    protected $packet;
+    protected $packet = array();
 
     /**
      * @var array
@@ -20,46 +20,6 @@ class Packet
     }
 
     /**
-     * @return string
-     */
-    public function rrname()
-    {
-        return Arrays::get($this->packet, 'host');
-    }
-
-    /**
-     * @return int
-     */
-    public function rrttl()
-    {
-        return Arrays::get($this->packet, 'ttl');
-    }
-
-    /**
-     * @return string
-     */
-    public function rrclass()
-    {
-        return Arrays::get($this->packet, 'class');
-    }
-
-    /**
-     * @return string
-     */
-    public function rrtype()
-    {
-        return Arrays::get($this->packet, 'type');
-    }
-
-    /**
-     * @return string
-     */
-    public function rrdata()
-    {
-        return Arrays::get($this->packet, 'ip', Arrays::get($this->packet, 'target'));
-    }
-
-    /**
      * @param callback $callBack
      * 
      * @return array
@@ -67,6 +27,56 @@ class Packet
     public function map($callBack)
     {
         return Arrays::map($this->packet, $callBack);
+    }
+
+    /**
+     * @return string
+     */
+    public function rrname()
+    {
+        return Arrays::get($this->packet, 'rrname');
+    }
+
+    /**
+     * @return int
+     */
+    public function rrttl()
+    {
+        return Arrays::get($this->packet, 'rrttl');
+    }
+
+    /**
+     * @return string
+     */
+    public function rrclass()
+    {
+        return Arrays::get($this->packet, 'rrclass');
+    }
+
+    /**
+     * @return string
+     */
+    public function rrtype()
+    {
+        return Arrays::get($this->packet, 'rrtype');
+    }
+
+    /**
+     * @return string
+     */
+    public function rrdata()
+    {
+        return Arrays::get($this->packet, 'rrdata');
+    }
+
+    /**
+     * @param string $key
+     * 
+     * @return bool
+     */
+    public function __isset($key)
+    {
+        return Arrays::exists($this->packet, $key);
     }
 
     /**
